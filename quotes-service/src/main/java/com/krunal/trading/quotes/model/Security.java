@@ -2,9 +2,6 @@ package com.krunal.trading.quotes.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Created by krunal on 2/02/17.
- */
 public class Security {
 
     @JsonProperty("CIK")

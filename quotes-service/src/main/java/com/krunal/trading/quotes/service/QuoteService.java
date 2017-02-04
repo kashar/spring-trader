@@ -1,9 +1,9 @@
-package com.krunal.trading.service;
+package com.krunal.trading.quotes.service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.krunal.trading.quotes.model.YahooQuoteResponse;
-import com.krunal.trading.quotes.model.Quote;
+import com.krunal.trading.quotes.model.*;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service facade to retrieve @{@link com.krunal.trading.quotes.model.Quote} and @{@link com.krunal.trading.quotes.model.CompanyInfo}
@@ -28,10 +29,10 @@ public class QuoteService {
     @Value("${quotes.company_url}")
     private String companyUrl;
 
-    @Value("${pivotal.quotes.yahoo_rest_query}")
+    @Value("${quotes.yahoo_rest_query}")
     protected String yahoo_url = "https://query.yahooapis.com/v1/public/yql?q=select * from yahoo.finance.quotes where symbol in ('{symbol}')&format={fmt}&env={env}";
 
-    @Value("${pivotal.quotes.yahoo_env}")
+    @Value("${quotes.yahoo_env}")
     protected String ENV = "http://datatables.org/alltables.env";
 
     public static final String FMT = "json";
@@ -50,8 +51,19 @@ public class QuoteService {
     }
 
     public List<Quote> getQuotes(final String symbol) {
-        restTemplate.getForObject(quoteUrl, YahooQuoteResponse.class, FMT, ENV)
+        YahooQuoteResponse response = restTemplate.getForObject(quoteUrl, YahooQuoteResponse.class, FMT, ENV);
+        YahooResults results = response.getResults();
 
+        List<YahooQuote> yahooQuoteList = results.getQuote();
+        LocalDate created = results.getCreated();
+        int resultCount = results.getCount();
+
+        List<Quote> quotes = yahooQuoteList.stream()
+              .map(yahooQuote -> QuoteMapper.getINSTANCE()
+              .map(yahooQuote, created))
+              .collect(Collectors.toList());
+
+
+        return quotes;
     }
-
 }
